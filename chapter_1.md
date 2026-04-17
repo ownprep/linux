@@ -57,6 +57,12 @@ The kernel handles:
 - **Device drivers** — communicating with hardware devices
 - **System calls** — providing an interface for programs to request OS services
 
+The "API" of a kernel is technically the System Call Interface. It is a predefined list of functions that the kernel agrees to perform for applications.
+
+- **File Management:** open(), read(), write(), close()
+- **Process Management:** fork() (create a process), exec() (run a program), exit()
+- **Networking:** socket(), connect(), send()
+
 ### 2.4 Shell
 
 The **shell** is a user-facing interface used to interact with the kernel and OS. It accepts commands and passes them to the kernel for execution.
