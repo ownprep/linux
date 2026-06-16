@@ -4,12 +4,127 @@
 
 ## Table of Contents
 
+- [1.0 Introduction to Linux](#10-introduction-to-linux)
+  - [Computer Basics](#computer-basics)
+  - [Key Definitions](#key-definitions)
+  - [What is Linux](#what-is-linux)
+  - [Linux Distributions](#linux-distributions-distros)
+  - [Virtual File System (VFS)](#virtual-file-system-vfs)
 - [1.1 Linux Architecture — Kernel, Shell & System Calls](#11-linux-architecture--kernel-shell--system-calls)
 - [1.2 File Hierarchy Standard (FHS)](#12-file-hierarchy-standard-fhs)
 - [1.3 File Permissions](#13-file-permissions)
 - [1.4 Hard Links vs Symbolic Links](#14-hard-links-vs-symbolic-links)
 - [1.5 Package Management](#15-package-management)
 - [1.6 CLI Text Processing — grep, sed, awk](#16-cli-text-processing--grep-sed-awk)
+- [1.7 Essential Commands](#17-essential-commands)
+
+---
+
+## 1.0 Introduction to Linux
+
+### Computer Basics
+
+A computer is made up of two fundamental components:
+
+| Component | Examples |
+|-----------|----------|
+| **Hardware** | CPU, Memory (RAM), Hard Disk, Peripheral Devices, Networking Devices |
+| **Software** | Programs, Databases, Operating System, Application Software |
+
+---
+
+### Key Definitions
+
+#### Program
+
+A **program** is a *passive file* stored on disk — a set of instructions that tells a computer what to do. It does nothing until it is executed.
+
+#### Operating System (OS)
+
+An **OS** is a collection of system software that manages a computer's hardware resources and provides services to applications running on top of it.
+
+#### Kernel
+
+The **kernel** is the core foundational component of the OS. It boots the OS and acts as the primary bridge between hardware and software applications.
+
+#### Shell
+
+The **shell** is a user-facing interface used to interact with the kernel and OS. It accepts commands and passes them to the kernel for execution.
+
+Examples: `bash`, `zsh`, `sh`
+
+#### Process
+
+A **process** is a program that is actively executing — it has been given CPU time, memory, and system resources.
+
+> **Program vs Process**
+>
+> | | |
+> |---|---|
+> | **Program** | Passive file sitting on disk |
+> | **Process** | Program actively executing with CPU & memory assigned |
+>
+> Simply loading a program into RAM alone does **not** make it a process — it must be *actively executing*.
+
+---
+
+### What is Linux
+
+**Linux** is an open-source, Unix-like OS kernel. While technically just the kernel, the term "Linux" commonly refers to a full **Linux distribution** — the kernel bundled with system software, tools, and package managers.
+
+Linux is widely used in:
+- Servers and data centres
+- Supercomputers *(over 90% of the world's top 500 run Linux)*
+- Embedded systems (routers, IoT devices)
+- Mobile devices (Android is built on the Linux kernel)
+
+---
+
+### Linux Distributions (Distros)
+
+A Linux **distro** is a complete OS built around the Linux kernel. Distros differ in the programs, tools, package managers, and configuration they bundle.
+
+| Distribution | Type | Package Manager |
+|---|---|---|
+| **Debian** | Community / Free | `apt` |
+| **Ubuntu** | Community / Free (based on Debian) | `apt` |
+| **CentOS Stream** | Community / Free (upstream preview of RHEL) | `dnf` / `yum` |
+| **RHEL** | Enterprise / Paid (Red Hat) | `dnf` (modern), `yum` (legacy) |
+| **Android** | Mobile (based on Linux kernel) | — |
+
+> - **RHEL family** (RHEL, CentOS Stream) → `dnf` / `yum` — enterprise-focused
+> - **Debian family** (Debian, Ubuntu) → `apt` — community-focused
+> - `dnf` is the modern replacement for `yum`
+
+---
+
+### Virtual File System (VFS)
+
+In Linux, **everything is treated as a file** — regular files, directories, hardware devices, and even live kernel data.
+
+```bash
+vim somefile.txt       # editing a regular file
+cat somefile.txt       # reading a regular file
+cat /proc/cpuinfo      # reading live CPU info — also just a file!
+```
+
+The **Virtual File System (VFS)** is the kernel abstraction layer that makes this possible. It provides a unified interface so that the same `open()`, `read()`, `write()` system calls work regardless of the underlying filesystem type.
+
+```
+cat /proc/cpuinfo
+        |
+    Kernel ──────────────► Virtual File System (VFS)
+                                    |
+                    ┌───────────────┼───────────────┐
+                  Ext4            proc             XFS
+               (disk FS)      (kernel info)    (disk FS)
+```
+
+| Filesystem | Role |
+|-----------|------|
+| `Ext4` | Standard Linux disk filesystem |
+| `proc` | Virtual FS exposing live kernel/process data |
+| `XFS` | High-performance disk filesystem (common in RHEL) |
 
 ---
 
@@ -435,6 +550,8 @@ An **additional directory entry** pointing to the **exact same inode** as the or
 - Cannot cross filesystem/partition boundaries (inodes are unique per partition)
 - Cannot link to directories (prevents infinite loops)
 
+> Think of printing multiple identical copies of a book. Each copy is complete and independent. Destroying one copy leaves all others intact.
+
 ```bash
 ln original.txt hard_pointer.txt        # create a hard link
 ```
@@ -447,6 +564,8 @@ An **entirely separate file** with its own unique inode, whose data block contai
 - If the original is moved or deleted → **dangling/broken link** — the path it stores no longer exists
 - Can cross filesystem boundaries
 - Can link to directories
+
+> Think of a bookmark in a book. The bookmark isn't the book itself — it just tells you where to find it. If someone moves the book, the bookmark becomes useless.
 
 ```bash
 ln -s /path/to/original.txt soft_link.txt   # create a symbolic link (-s flag required)
@@ -805,14 +924,198 @@ grep "Failed password for root" /var/log/auth.log | awk '{print $11}' | sed 's/^
 
 ---
 
+## 1.7 Essential Commands
+
+### Navigation
+
+#### `pwd` — Print Working Directory
+
+```bash
+pwd                 # print the full path of the current directory
+```
+
+#### `ls` — List Directory Contents
+
+```bash
+ls                  # list files in current directory
+ls -l               # long format: permissions, owner, size, date
+ls -a               # show hidden files (starting with .)
+ls -la              # long format including hidden files
+ls -lh              # long format with human-readable sizes (KB, MB)
+ls -lt              # sort by time (newest first)
+ls -lS              # sort by size (largest first)
+ls -R               # recursively list all subdirectories
+
+# Find the largest files (disk space debugging)
+ls -laSh | head -10
+
+# Find recently modified files (troubleshooting)
+ls -lat | head -10
+
+# List only directories
+ls -la | grep ^d
+```
+
+**Reading `ls -l` output:**
+
+```
+-rw-r--r-- 1 user group 1234 Nov 24 10:30 config.py
+│││││││││ │ │     │     │    │             │
+│││││││││ │ │     │     │    │             └── filename
+│││││││││ │ │     │     │    └── modification time
+│││││││││ │ │     │     └── size in bytes
+│││││││││ │ │     └── group owner
+│││││││││ │ └── user owner
+│││││││││ └── number of hard links
+│└┴┴┴┴┴┴┴┴── file permissions
+```
+
+#### `cd` — Change Directory
+
+```bash
+cd /etc                       # absolute path (starts from /)
+cd projects/web-app           # relative path (from current location)
+cd ..                         # go up one level to parent directory
+cd ../another-project         # go up one level, then into another directory
+cd ../../back-two-levels      # go up two levels
+cd ~                          # go to your home directory
+cd -                          # return to the previous directory
+cd /                          # go to root directory
+```
+
+---
+
+### File & Directory Management
+
+#### `mkdir` / `rmdir` — Create / Remove Directories
+
+```bash
+mkdir projects              # create a new directory
+mkdir -p work/logs/2024     # create nested directories in one command
+rmdir old_dir               # remove an empty directory
+```
+
+#### `touch` — Create Empty Files
+
+```bash
+touch newfile.txt                       # create a new empty file (or update timestamp)
+touch file1.txt file2.txt file3.txt     # create multiple files at once
+```
+
+> **`touch` vs `vim`:** `touch` creates an empty file instantly without opening an editor. `vim` creates (and opens) a file for editing — the file is only saved if you write it with `:w`.
+
+#### `rm` — Remove Files or Directories
+
+```bash
+rm notes.txt            # delete a file
+rm file1.txt file2.txt  # delete multiple files
+rm -i notes.txt         # delete with interactive confirmation
+rm -r old_project/      # recursively delete a directory and its contents
+rm -f temp.log          # force delete without prompting
+rm -rf /tmp/cache/      # force recursive delete — use with extreme caution ⚠️
+```
+
+#### `cp` — Copy Files or Directories
+
+```bash
+cp source.txt destination.txt   # copy file to a new name
+cp file.txt /path/to/dir/       # copy a file to a destination directory
+cp -r docs/ backup/             # recursively copy a directory
+cp -p script.sh /opt/           # preserve permissions, timestamps, ownership
+cp -i file.txt /tmp/            # prompt before overwriting
+```
+
+#### `mv` — Move / Rename Files
+
+```bash
+mv file.txt /new/location/  # move a file to a new location
+mv report.txt final.txt     # rename a file
+mv -i data.csv /opt/        # prompt before overwriting
+```
+
+#### `find` — Search for Files
+
+```bash
+find / -name "test.txt" 2>/dev/null         # find file by name (suppress errors)
+find /etc -name "*.conf" 2>/dev/null        # find all .conf files under /etc
+find /etc -name "*nginx*" -type f           # find nginx config files specifically
+find / -type d -name bin                    # find directories named 'bin'
+find /home -mtime -7                        # files modified in the last 7 days
+find / -size +100M                          # files larger than 100 MB
+```
+
+#### `stat` — File Status
+
+```bash
+stat /etc/hosts     # show detailed info: size, permissions, timestamps, inode
+```
+
+---
+
+### Getting Help
+
+```bash
+man ls              # open the manual page (most detailed)
+ls --help           # quick help summary with common flags
+info bash           # more detailed GNU-style documentation
+```
+
+---
+
+### Text Editors
+
+| Editor | Description |
+|--------|-------------|
+| `vi` / `vim` | Powerful modal editor. `i` = Insert mode, `Esc` = Normal mode, `:wq` = save and quit, `:q!` = quit without saving |
+| `nano` | Beginner-friendly. `Ctrl+O` = save, `Ctrl+X` = exit |
+
+```bash
+vim file.txt        # open file in vim
+nano file.txt       # open file in nano
+```
+
+---
+
+### Viewing File Contents
+
+```bash
+cat /etc/hosts          # print entire file (best for short files)
+tac log.txt             # print file in reverse (last line first)
+head -n 20 log.txt      # show the first 20 lines
+tail -n 20 log.txt      # show the last 20 lines
+tail -f /var/log/syslog # follow file in real time (great for live logs)
+less big_file.txt       # paginated viewer — scroll up/down, q to quit
+more big_file.txt       # older pager — forward only, q to quit
+```
+
+> Prefer `less` over `more` — it supports both forward and backward scrolling.
+
+---
+
+### Sorting & Deduplication
+
+```bash
+sort names.txt          # sort lines alphabetically
+sort -n scores.txt      # sort numerically
+sort -r names.txt       # reverse order
+sort -u list.txt        # sort and remove duplicate lines
+uniq -c sorted.txt      # count consecutive duplicate lines
+```
+
+---
+
 > **Quick Reference — Chapter 1 Commands**
 >
 > | Category | Commands |
 > |----------|----------|
 > | **Kernel Modules** | `insmod`, `modprobe`, `rmmod`, `lsmod` |
+> | **Navigation** | `pwd`, `ls`, `cd`, `find`, `stat` |
+> | **File Management** | `touch`, `mkdir`, `rm`, `cp`, `mv`, `rmdir` |
+> | **Viewing Files** | `cat`, `tac`, `head`, `tail`, `less`, `more` |
 > | **Permissions** | `chmod`, `chown`, `chgrp`, `chattr`, `lsattr` |
 > | **ACLs** | `setfacl`, `getfacl` |
 > | **Links** | `ln`, `ln -s`, `ls -li` |
 > | **Package (Debian)** | `apt update`, `apt install`, `apt upgrade`, `apt remove`, `apt purge`, `apt autoremove` |
 > | **Package (RHEL)** | `dnf install`, `dnf upgrade`, `dnf remove`, `dnf check-update` |
 > | **Text Processing** | `grep`, `sed`, `awk`, `cut`, `sort`, `uniq` |
+> | **Help** | `man`, `--help`, `info` |
